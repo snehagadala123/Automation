@@ -8,7 +8,7 @@ print("✅ hello.py running...")
 
 app = Flask(__name__)
 
-# === Bamboo Configuration ===
+
 BAMBOO_URL = "http://192.168.1.20:8085"  # Your Bamboo server IP
 PLAN_KEY = "MYB"                  # Replace with your real Bamboo Plan key
 BAMBOO_USER = "sneha"                   # Replace with your Bamboo username
