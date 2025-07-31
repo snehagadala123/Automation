@@ -1,45 +1,83 @@
-
-print("Hello, Git!")
 from flask import Flask, request, jsonify
 import requests
-
-# Optional: keep your existing hello world print
-print("✅ hello.py running...")
+import re
 
 app = Flask(__name__)
 
+# Bamboo details
+BAMBOO_URL = "https://4ac99c8227b0.ngrok-free.app/rest/api/latest/queue/MYB-MYAP"
+BAMBOO_USER = "sneha"
+BAMBOO_PASS = "Maha@13012020"
 
-BAMBOO_URL = "https://2aefe1c67c6f.ngrok-free.app/rest/api/latest/queue/MYB-MYAP"
-PLAN_KEY = "MYB"                  # Replace with your real Bamboo Plan key
-BAMBOO_USER = "sneha"                   # Replace with your Bamboo username
-BAMBOO_PASS = "Maha@13012020"                   # Replace with your Bamboo password
+# Jira Server details
+JIRA_URL = "http://192.168.1.20:8080"  # Or your Jira Server IP
+JIRA_USER = "sneha"                 # Replace with your Jira username
+JIRA_PASS = "Dakshu@2022"                 # Replace with your Jira password
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    if request.headers.get('Content-Type') == 'application/json':
-        data = request.get_json()
-
-        # Handle GitHub ping event
-        if request.headers.get('X-GitHub-Event') == 'ping':
-            print("✅ GitHub webhook ping received!")
-            return jsonify({'message': 'Pong!'}), 200
-
-        # Handle push event (real commits)
-        if request.headers.get('X-GitHub-Event') == 'push':
-            repo = data.get('repository', {}).get('full_name', 'unknown')
-            pusher = data.get('pusher', {}).get('name', 'unknown')
-            commit_msg = data.get('head_commit', {}).get('message', 'No commit message')
-
-            print(f"📦 Repo: {repo}")
-            print(f"👤 Pusher: {pusher}")
-            print(f"💬 Commit message: {commit_msg}")
-
-            # Trigger Bamboo or any other logic here...
-
-            return jsonify({'message': 'Push received'}), 200
-
-        return jsonify({'message': 'Unhandled event type'}), 200
-    else:
+    if request.headers.get('Content-Type') != 'application/json':
         return jsonify({'error': 'Unsupported content type'}), 400
+
+    data = request.get_json()
+
+    if request.headers.get('X-GitHub-Event') == 'ping':
+        print("✅ GitHub webhook ping received!")
+        return jsonify({'message': 'Pong!'}), 200
+
+    if request.headers.get('X-GitHub-Event') == 'push':
+        repo = data.get('repository', {}).get('full_name', 'unknown')
+        pusher = data.get('pusher', {}).get('name', 'unknown')
+        commit_msg = data.get('head_commit', {}).get('message', 'No commit message')
+        commit_id = data.get('head_commit', {}).get('id', '')
+        branch = data.get('ref', '').split('/')[-1]
+
+        print(f"📦 Repo: {repo}")
+        print(f"👤 Pusher: {pusher}")
+        print(f"💬 Commit message: {commit_msg}")
+        print(f"🔀 Branch: {branch}")
+        print(f"🔗 Commit ID: {commit_id}")
+
+        # Extract Jira issue key
+        match = re.search(r'([A-Z]+-\d+)', commit_msg)
+        if match:
+            issue_key = match.group(1)
+            print(f"🪪 Found Jira issue key: {issue_key}")
+        else:
+            print("⚠️ No Jira issue key found in commit.")
+            return jsonify({'message': 'No Jira issue key found'}), 200
+
+        # Trigger Bamboo build
+        bamboo_response = requests.post(
+            BAMBOO_URL,
+            auth=(BAMBOO_USER, BAMBOO_PASS),
+            params={
+                'bamboo.variable.commit': commit_id,
+                'bamboo.variable.branch': branch
+            }
+        )
+        print(f"🚀 Bamboo build trigger status: {bamboo_response.status_code}")
+
+        # Post comment to Jira issue
+        jira_comment = {
+            "body": f"🚧 Build started in Bamboo for commit `{commit_id}` on branch `{branch}`."
+        }
+
+        jira_response = requests.post(
+            f"{JIRA_URL}/rest/api/2/issue/{issue_key}/comment",
+            auth=(JIRA_USER, JIRA_PASS),
+            headers={"Content-Type": "application/json"},
+            json=jira_comment
+        )
+
+        if jira_response.status_code == 201:
+            print(f"📝 Comment added to Jira issue {issue_key}")
+        else:
+            print(f"❌ Failed to comment on Jira issue: {jira_response.status_code} - {jira_response.text}")
+
+        return jsonify({'message': 'Build triggered and Jira updated'}), 200
+
+    return jsonify({'message': 'Unhandled event type'}), 200
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
