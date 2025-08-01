@@ -9,7 +9,7 @@ BAMBOO_URL = "https://de566d64854f.ngrok-free.app/rest/api/latest/queue/MYB-MYAP
 BAMBOO_USER = "sneha"
 BAMBOO_PASS = "Maha@13012020"
 
-# Jira Server details
+# Jira Server detail
 JIRA_URL = "http://192.168.1.20:8080"  # Or your Jira Server IP
 JIRA_USER = "sneha"                 # Replace with your Jira username
 JIRA_PASS = "Dakshu@2022"                 # Replace with your Jira password
@@ -53,7 +53,7 @@ def webhook():
             auth=(BAMBOO_USER, BAMBOO_PASS),
             params={
                 'bamboo.variable.commit': commit_id,
-                'bamboo.variable.branch': branch
+                'bamboo.variable.branch': branc
             }
         )
         print(f"🚀 Bamboo build trigger status: {bamboo_response.status_code}")
