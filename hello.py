@@ -53,7 +53,7 @@ def webhook():
             auth=(BAMBOO_USER, BAMBOO_PASS),
             params={
                 'bamboo.variable.commit': commit_id,
-                'bamboo.variable.branch': branc
+                'bamboo.variable.branch': branch
             }
         )
         print(f"🚀 Bamboo build trigger status: {bamboo_response.status_code}")
