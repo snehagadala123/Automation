@@ -5,7 +5,7 @@ import re
 app = Flask(__name__)
 
 # Bamboo details
-BAMBOO_URL = "https://a9db20949d3d.ngrok-free.app/rest/api/latest/queue/MYB-MYAP"
+BAMBOO_URL = " https://02c622d9a1fd.ngrok-free.app/rest/api/latest/queue/MYB-MYAP"
 BAMBOO_USER = "sneha"
 BAMBOO_PASS = "Maha@13012020"
 
